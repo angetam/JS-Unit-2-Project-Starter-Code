@@ -225,6 +225,7 @@ nav ul ul li {
 .article .articleContent h6 {
   margin-top: 0;
   color: #666;
+  text-transform: uppercase;
 }
 
 .article .impressions {
