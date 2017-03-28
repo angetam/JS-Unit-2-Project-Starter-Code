@@ -3,31 +3,36 @@
   Angela Tam
 */
 $(document).ready(function(){
-  $("#popUp.loader").removeClass("hidden");
+  	$("#popUp.loader").removeClass("hidden");
+  	var loader = function(){
+    	$("#popUp.loader").addClass("hidden");
+    };
 	function addReddit(info){
 		$.each(info, function(i){
-      var $newImg = info[i].data.preview.images[0].source.url;
-      var $title = info[i].data.title;
-      var $impressions = info[i].data.ups;
-      var $category = info[i].data.subreddit;
-      var $link = info[i].data.url;
-      var $id = "redditNews";
-      var $description;
-      var $author = info[i].data.author;
-      addToFeed($newImg, $title, $impressions, $category, $link, $id, $description, $author);
+	      var $newImg = info[i].data.preview.images[0].source.url;
+	      var $title = info[i].data.title;
+	      var $impressions = info[i].data.ups;
+	      var $category = info[i].data.subreddit;
+	      var $link = info[i].data.url;
+	      var $id = "redditNews";
+	      var $description;
+	      var $author = info[i].data.author;
+	      var $date = new Date(info[i].data.created);
+	      addToFeed($newImg, $title, $impressions, $category, $link, $id, $description, $author, $date);
 		})	
 	}
 	function addDailyWtf(info){
 		$.each(info, function(i){ 
-      var $newImg = info[i].Author.ImageUrl;
-      var $title = info[i].Title;
-      var $impressions = info[i].CachedCommentCount;
-      var $category = info[i].Series.Title;
-      var $link = info[i].Url;
-      var $id = "dailyWtfNews";
-      var $description = info[i].SummaryHtml;
-      var $author = info[i].Author.Name;
-      addToFeed($newImg, $title, $impressions, $category, $link, $id, $description, $author);
+	      var $newImg = info[i].Author.ImageUrl;
+	      var $title = info[i].Title;
+	      var $impressions = info[i].CachedCommentCount;
+	      var $category = info[i].Series.Title;
+	      var $link = info[i].Url;
+	      var $id = "dailyWtfNews";
+	      var $description = info[i].SummaryHtml;
+	      var $author = info[i].Author.Name;
+	      var $date = new Date(info[i].DisplayDate);
+	      addToFeed($newImg, $title, $impressions, $category, $link, $id, $description, $author, $date);
 		})
 	}
   function addHacker(info){
@@ -39,9 +44,11 @@ $(document).ready(function(){
       var $id = "hackerNewsNews";
       var $description = info.text;
       var $author = info.by;
-      addToFeed($newImg, $title, $impressions, $category, $link, $id, $description, $author);
+      var $date = new Date(info.time);
+      addToFeed($newImg, $title, $impressions, $category, $link, $id, $description, $author, $date);
 	}
-  function addToFeed(image, title, impressions, category, link, id, description, author){
+  function addToFeed(image, title, impressions, category, link, id, description, author, date){
+  	$("#popUp.loader").addClass("hidden");
     var newClearfix = $("<div>").addClass("clearfix");
     var newImg = $("<img>").error(function(){
       $(this).attr("src", "https://repo.spydar007.com/packages/images/Reddit.png");
@@ -52,50 +59,74 @@ $(document).ready(function(){
     var newCategory = $("<h6>").text(category);
     var newLink = $("<a>").attr("href", "#").append(newH);
 		var newContent = $("<section>").addClass("articleContent").append(newLink).append(newCategory);
-    var newArticle = $("<article>").addClass("article").append(newSection, newContent, newImpressions, newClearfix).addClass(id);
+    var newArticle = $("<article>").addClass("article").append(newSection, newContent, newImpressions, newClearfix).addClass(id).attr("data-date", date);
 		$("#main").append(newArticle);
   }
-  
-	$.ajax("https://accesscontrolalloworiginall.herokuapp.com/https://www.reddit.com/.json", {
+  function sortDescending(a,b){
+  	return new Date($(a).attr("data-date")) > new Date($(b).attr("data.date"));
+  }
+  function search(){
+    var input, filter, article, a, i;
+    input = $("input");
+    article = $("article");
+    articleTitle = $("article h3");
+    filter = input.val().toUpperCase();
+    for (i=0;i<article.length;i++){
+      a = article[i].getElementsByTagName("a")[0];
+      if(a.innerHTML.toUpperCase().indexOf(filter)>-1){
+        article[i].style.display="";
+      } else {
+        article[i].style.display="none";
+      }
+    }
+  }
+	$.ajax("https://www.reddit.com/.json", {
 		data: "jsonp",
 		success: function(response){
-      $("#popUp.loader").addClass("hidden");
 			addReddit(response.data.children);
-		}, error: function(jqXHR, textStatus, errorThrown){
-      alert("An error has occured. Status code: " + jqXHR.status + "Error thrown: " + errorThrown)
-    }
+			}, 
+		error: function(jqXHR, textStatus, errorThrown){
+	      alert("An error has occured while loading the Reddit Feed. \nStatus code: " + jqXHR.status + "\nError thrown: " + errorThrown)
+	    }
 	});
+
   $.ajax("https://accesscontrolalloworiginall.herokuapp.com/http://thedailywtf.com/api/articles/recent/15", {
 		data: "jsonp",
 		success: function(response){
-      addDailyWtf(response);
-		}, error: function(jqXHR, textStatus, errorThrown){
-      alert("An error has occured. Status code: " + jqXHR.status + "Error thrown: " + errorThrown)
-    }
+	      addDailyWtf(response);
+			}, 
+      error: function(jqXHR, textStatus, errorThrown){
+	      alert("An error has occured while loading the Daily WTF feed. \nStatus code: " + jqXHR.status + "\nError thrown: " + errorThrown)
+	    }
   });
   $.ajax("https://accesscontrolalloworiginall.herokuapp.com/https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty", {
 		data: "jsonp",
 		success: function(response){ 
-      $("#popUp.loader").addClass("hidden");
-      for(var i=0;i<10;i++) {
-        $.ajax("https://accesscontrolalloworiginall.herokuapp.com/https://hacker-news.firebaseio.com/v0/item/" + response[i] + ".json?print=pretty", {
-          data: "jsonp",
-          success: function(nextResponse){
-            addHacker(nextResponse);
-          }, 
-          error: function(jqXHR, textStatus, errorThrown){
-      alert("An error has occured. Status code: " + jqXHR.status + "Error thrown: " + errorThrown)
-        }
-      })
+	      for(var i=0;i<10;i++) {
+	        $.ajax("https://accesscontrolalloworiginall.herokuapp.com/https://hacker-news.firebaseio.com/v0/item/" + response[i] + ".json?print=pretty", {
+	          data: "jsonp",
+	          success: function(nextResponse){
+	            addHacker(nextResponse);
+	          }, 
+	          error: function(jqXHR, textStatus, errorThrown){
+	      alert("An error has occured while loading the Hacker News feed. \nStatus code: " + jqXHR.status + "\nError thrown: " + errorThrown)
+	        }
+      	})
       }
 		} 
 	});
+  
+  // News Source Filter
   $("#source li a").on("click", function(){
+  	$("#popUp.loader").removeClass("hidden");
     $("article").hide();
     var source = "." + $(this).attr("id") + "News";
     $(source).show();
+    setTimeout(loader, 500);
+    var sourceName = $(this).text();
+    $("section.container span").text(sourceName);
   });
-
+  // Article Popup Overlay
   $(document.body).on("click", ".articleContent a h3", function(){
     var title = $(this).text();
     var url = $(this).attr("data-url");
@@ -106,12 +137,25 @@ $(document).ready(function(){
     if (description) {
       $("#popUp p").html(description);
     } else {
-      $("#popUp p").text("This story is by " + author);
+      $("#popUp p").text("This story is by " + author );
     }
     $(".popUpAction").attr("href", url);
   })
-
+  // Close popup 
   $(".closePopUp").on("click",function(){
     $("#popUp").addClass("hidden");
   })
+  // Toggle Search
+  $("#search img").on("click", function(){
+  	$("section #search").toggleClass("active");
+  })
+  // Loading window 
+  $("section.container a h1").on("click", function(){
+  	setTimeout(loader, 500);
+  	$("section.container span").text("Source Name");
+  	$("article").show();
+  })
+  // Sort articles by date  
+  $("article").sort(sortDescending);
+  $("input").on("keyup", search);
 })
